@@ -1,0 +1,270 @@
+<title>KY vs CHEA Boxing Championship</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
+<style>
+/* Layout: full-bleed 3D arena canvas, HUD and menus as layered overlays, menu stack on the left so the ring stays visible on the right */
+:root{--bg:#06070c;--ink:#eef1f8;--mute:#8d95ab;--panel:rgba(9,11,20,.78);--panel2:rgba(20,24,40,.85);--line:rgba(255,255,255,.14);--blue:#2f7bff;--blue2:#8db8ff;--red:#ff3d4d;--red2:#ff9aa3;--gold:#ffc548;--good:#3ddc97;--f-d:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif;--f-b:'Barlow',system-ui,sans-serif;--f-c:'Barlow Condensed','Arial Narrow',sans-serif;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f-b);font-size:16px;user-select:none;-webkit-user-select:none;touch-action:none}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;background:var(--bg)}
+.ui{position:fixed;inset:0;pointer-events:none;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:max(10px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-bottom,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn{pointer-events:auto;display:block;width:100%;text-align:left;border:0;background:linear-gradient(100deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border-left:4px solid var(--line);padding:.7rem 1.1rem;font-family:var(--f-d);font-weight:800;font-size:1.5rem;letter-spacing:.06em;text-transform:uppercase;transform:skewX(-8deg);transition:transform .15s,border-color .15s,background .15s}
+.btn span{display:block;transform:skewX(8deg)}
+.btn small{display:block;font-family:var(--f-c);font-weight:500;font-size:.8rem;letter-spacing:.12em;color:var(--mute);text-transform:uppercase}
+.btn:hover,.btn:focus-visible{border-color:var(--gold);background:linear-gradient(100deg,rgba(255,197,72,.22),rgba(255,255,255,.03));transform:skewX(-8deg) translateX(8px)}
+.btn.blue{border-color:var(--blue)}.btn.red{border-color:var(--red)}
+.btn.hot{background:linear-gradient(100deg,var(--red),#b3202e 60%,rgba(0,0,0,.2));border-color:var(--gold)}
+.btn.sm{font-size:1.05rem;padding:.5rem .9rem;width:auto;display:inline-block}
+/* screens */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s;pointer-events:none;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-bottom,0px));overflow:auto}
+.screen.on{opacity:1;visibility:visible;pointer-events:auto}
+.screen>*{pointer-events:auto}
+.scrim{background:linear-gradient(90deg,rgba(4,5,10,.94) 0%,rgba(4,5,10,.72) 42%,rgba(4,5,10,0) 78%)}
+.scrim-full{background:rgba(4,5,10,.84)}
+.stack{width:min(430px,100%);display:flex;flex-direction:column;gap:.55rem}
+.logo{font-family:var(--f-d);font-weight:900;line-height:.82;margin:0 0 .5rem;text-transform:uppercase}
+.logo .ky{color:var(--blue);font-size:clamp(3.6rem,11vw,7rem);text-shadow:0 0 40px rgba(47,123,255,.55)}
+.logo .vs{color:var(--gold);font-size:clamp(1.3rem,3.2vw,2.2rem);letter-spacing:.3em;display:block;margin:.15em 0 .2em .3em}
+.logo .chea{color:var(--red);font-size:clamp(3.6rem,11vw,7rem);text-shadow:0 0 40px rgba(255,61,77,.5)}
+.tag{font-family:var(--f-c);font-weight:700;font-size:1.05rem;letter-spacing:.42em;color:var(--ink);text-transform:uppercase;margin:0 0 1.2rem;padding-top:.7rem;border-top:2px solid var(--line)}
+h2{font-family:var(--f-d);font-weight:900;font-size:clamp(2rem,5vw,3rem);text-transform:uppercase;letter-spacing:.04em;margin:0 0 .6rem;line-height:1}
+.lbl{font-family:var(--f-c);font-weight:600;font-size:.85rem;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.panel{background:var(--panel);border:1px solid var(--line);padding:1rem 1.1rem;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.panel p{margin:.3rem 0;line-height:1.5;color:#cfd5e6;font-size:.95rem}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+/* settings */
+.set{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.55rem 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.seg{display:flex;gap:2px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:rgba(255,255,255,.05);padding:.35rem .75rem;font-family:var(--f-c);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:.9rem}
+.seg button.on{background:var(--gold);color:#1a1300;border-color:var(--gold)}
+input[type=range]{accent-color:var(--gold);width:150px}
+/* select */
+.cards{display:grid;grid-template-columns:minmax(0,310px) 1fr minmax(0,310px);gap:12px;width:100%;margin:0 auto}
+.cards .card:nth-child(2){grid-column:3}
+.card{pointer-events:auto;text-align:left;border:1px solid var(--line);background:rgba(8,10,18,.82);padding:1rem;display:flex;flex-direction:column;gap:.5rem;transition:transform .2s,border-color .2s;min-width:0}
+.card.blue.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue),0 0 40px rgba(47,123,255,.3)}
+.card.red.on{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 40px rgba(255,61,77,.3)}
+.card h3{font-family:var(--f-d);font-weight:900;font-size:2.6rem;margin:0;line-height:.9}
+.card.blue h3{color:var(--blue2)}.card.red h3{color:var(--red2)}
+.stat{display:grid;grid-template-columns:5.2rem 1fr 2rem;align-items:center;gap:.5rem;font-family:var(--f-c);font-weight:600;letter-spacing:.08em;font-size:.85rem;text-transform:uppercase}
+.stat i{display:block;height:7px;background:rgba(255,255,255,.1)}
+.stat i b{display:block;height:100%}
+.card.blue .stat b{background:var(--blue)}.card.red .stat b{background:var(--red)}
+.stat em{font-style:normal;text-align:right;color:var(--mute)}
+.mini{font-size:.85rem;color:#b9c0d4;line-height:1.4;margin:0}
+/* how to play */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;width:min(980px,100%);margin:0 auto}
+kbd{font-family:var(--f-c);font-weight:700;font-size:.85rem;background:rgba(255,255,255,.12);border:1px solid var(--line);border-bottom-width:2px;padding:.05rem .4rem;margin-right:.25rem}
+.krow{display:flex;justify-content:space-between;gap:.6rem;padding:.25rem 0;border-bottom:1px dashed rgba(255,255,255,.1);font-size:.9rem}
+.krow span:last-child{color:var(--mute);text-align:right}
+/* HUD */
+#hud{display:none}#hud.on{display:block}
+.hb{position:absolute;top:max(8px,env(safe-area-inset-top,0px));width:min(36%,430px)}
+#h1{left:max(16px,env(safe-area-inset-left,0px))}#h2{right:max(16px,env(safe-area-inset-right,0px));text-align:right}
+.nm{display:flex;align-items:center;gap:.5rem;font-family:var(--f-d);font-weight:900;font-size:clamp(1.3rem,3.2vw,2.1rem);letter-spacing:.06em;line-height:1;text-transform:uppercase}
+#h2 .nm{flex-direction:row-reverse}
+.corner{font-family:var(--f-c);font-weight:700;font-size:.7rem;letter-spacing:.2em;padding:.15rem .45rem;color:#fff}
+.corner.b{background:var(--blue)}.corner.r{background:var(--red)}
+.bar{position:relative;height:16px;background:rgba(0,0,0,.6);border:1px solid var(--line);margin-top:5px;transform:skewX(-14deg);overflow:hidden}
+.bar.s{height:8px;margin-top:4px}
+.bar i{position:absolute;inset:0 auto 0 0;display:block;width:100%}
+.bar .g{background:#fff;opacity:.85}
+.bar .f{background:linear-gradient(180deg,#5ef0a8,#21b36f)}
+.bar .f.low{background:linear-gradient(180deg,#ffb13d,#ff5a3d)}
+.bar .st{background:linear-gradient(180deg,#ffe27a,#f0a81a)}
+#h2 .bar i{inset:0 0 0 auto}
+.mid{position:absolute;top:max(6px,env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);text-align:center;min-width:130px}
+#timer{font-family:var(--f-d);font-weight:900;font-size:clamp(2rem,5vw,3.4rem);line-height:.9;background:rgba(0,0,0,.6);border:1px solid var(--line);padding:.1rem .8rem;font-variant-numeric:tabular-nums}
+#timer.warn{color:var(--red);animation:pulse .5s infinite alternate}
+#roundlbl{font-family:var(--f-c);font-weight:700;letter-spacing:.3em;font-size:.85rem;color:var(--gold);margin-top:3px}
+#status{font-family:var(--f-c);font-weight:600;letter-spacing:.2em;font-size:.75rem;color:var(--mute);text-transform:uppercase}
+@keyframes pulse{to{transform:scale(1.07)}}
+.bot{position:absolute;bottom:max(10px,env(safe-area-inset-bottom,0px));width:min(30%,320px)}
+#b1{left:max(16px,env(safe-area-inset-left,0px))}#b2{right:max(16px,env(safe-area-inset-right,0px));text-align:right}
+.combo{font-family:var(--f-d);font-weight:900;font-size:2rem;line-height:1;min-height:2rem;color:var(--gold);text-shadow:0 2px 12px rgba(0,0,0,.8);opacity:0;transition:opacity .2s}
+.combo.on{opacity:1}
+.combo small{font-family:var(--f-c);font-size:.8rem;letter-spacing:.2em;color:#fff;margin-left:.4rem}
+.sp{height:10px;margin-top:4px;background:rgba(0,0,0,.6);border:1px solid var(--line);transform:skewX(-14deg);overflow:hidden}
+.sp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7a5cff,#d36bff)}
+.sp.rdy i{background:linear-gradient(90deg,#ffc548,#fff1b0);animation:pulse .4s infinite alternate}
+#b2 .sp i{margin-left:auto}
+.sptxt{font-family:var(--f-c);font-weight:700;font-size:.75rem;letter-spacing:.2em;color:var(--mute);margin-top:2px;text-transform:uppercase}
+.sp.rdy+.sptxt{color:var(--gold)}
+#hints{position:absolute;bottom:calc(max(8px,env(safe-area-inset-bottom,0px)) + 34px);left:50%;transform:translateX(-50%);font-family:var(--f-c);font-weight:600;font-size:.78rem;letter-spacing:.08em;color:#aab2c8;text-align:center;max-width:36%;line-height:1.5;text-shadow:0 1px 6px #000}
+#banner{position:absolute;top:34%;left:0;right:0;text-align:center;font-family:var(--f-d);font-weight:900;font-size:clamp(3rem,11vw,8rem);text-transform:uppercase;line-height:.9;letter-spacing:.04em;opacity:0;transform:scale(1.5);text-shadow:0 6px 40px rgba(0,0,0,.8);padding:0 1rem}
+#banner.show{animation:ban 1.6s cubic-bezier(.2,.9,.2,1) forwards}
+#banner.long{animation-duration:3.2s}
+@keyframes ban{0%{opacity:0;transform:scale(1.9)}12%{opacity:1;transform:scale(1)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.96)}}
+#banner small{display:block;font-family:var(--f-c);font-size:clamp(1rem,2.6vw,1.6rem);letter-spacing:.4em;color:var(--gold);font-weight:700;margin-top:.5rem}
+#count{position:absolute;top:30%;left:0;right:0;text-align:center;font-family:var(--f-d);font-weight:900;font-size:clamp(5rem,20vw,13rem);line-height:.9;color:#fff;text-shadow:0 0 60px var(--red);opacity:0}
+#count.on{opacity:1}
+#count small{display:block;font-family:var(--f-c);font-size:1.1rem;letter-spacing:.4em;color:var(--gold)}
+#floats{position:absolute;inset:0;overflow:hidden}
+.fl{position:absolute;font-family:var(--f-d);font-weight:900;font-size:1.7rem;text-shadow:0 2px 10px #000;white-space:nowrap;transform:translate(-50%,-50%);opacity:0}
+#flash{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(255,30,50,.65));transition:opacity .25s}
+#bars::before,#bars::after{content:"";position:fixed;left:0;right:0;height:0;background:#000;transition:height .6s;pointer-events:none;z-index:3}
+#bars::before{top:0}#bars::after{bottom:0}
+#bars.on::before,#bars.on::after{height:11vh}
+.hbtn{pointer-events:auto;position:absolute;top:calc(max(8px,env(safe-area-inset-top,0px)) + 74px);width:42px;height:34px;background:var(--panel);border:1px solid var(--line);font-family:var(--f-c);font-weight:700;font-size:.8rem;letter-spacing:.1em}
+#btnPause{right:max(16px,env(safe-area-inset-right,0px))}#btnMute{right:calc(max(16px,env(safe-area-inset-right,0px)) + 48px)}
+#train{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(max(8px,env(safe-area-inset-top,0px)) + 118px);width:210px;padding:.7rem .8rem;display:none;pointer-events:auto}
+#train.on{display:block}
+#train h4{margin:0 0 .4rem;font-family:var(--f-c);font-size:.85rem;letter-spacing:.2em;color:var(--gold);text-transform:uppercase}
+#train li{list-style:none;font-family:var(--f-c);font-weight:600;font-size:.95rem;letter-spacing:.05em;padding:.12rem 0;color:#c4cbe0;display:flex;gap:.5rem;align-items:center}
+#train li::before{content:"";width:11px;height:11px;border:2px solid var(--mute);flex:none}
+#train li.ok{color:var(--good)}#train li.ok::before{background:var(--good);border-color:var(--good)}
+#train ul{margin:0;padding:0}
+#train .seg{margin-top:.5rem}
+/* touch */
+#touch{display:none}#touch.on{display:block}
+#stick{position:absolute;left:max(22px,env(safe-area-inset-left,0px));bottom:max(22px,env(safe-area-inset-bottom,0px));width:132px;height:132px;border-radius:50%;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.22);pointer-events:auto;touch-action:none}
+#knob{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.55)}
+.tb{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(20,24,40,.62);font-family:var(--f-d);font-weight:900;letter-spacing:.04em;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;font-size:.95rem}
+.tb.dn{background:rgba(255,197,72,.5);transform:scale(.93);border-color:var(--gold)}
+#tbP{right:calc(max(16px,env(safe-area-inset-right,0px)) + 0px);bottom:max(14px,env(safe-area-inset-bottom,0px));width:0;height:0}
+.tb.p{width:70px;height:70px}.tb.sp2{width:64px;height:64px;font-size:.8rem;border-color:var(--gold);color:var(--gold)}
+.tb.d{width:56px;height:56px;font-size:.75rem}
+.tb.k{width:80px;height:80px;border-color:var(--blue2);color:var(--blue2)}
+/* break / result / pause */
+.center{display:flex;align-items:center;justify-content:center}
+.modal{width:min(760px,100%);margin:auto;padding:1.4rem 1.5rem;background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;gap:.8rem}
+table{border-collapse:collapse;width:100%;font-family:var(--f-c);font-weight:600;font-size:1rem;letter-spacing:.05em;font-variant-numeric:tabular-nums}
+th,td{padding:.35rem .5rem;border-bottom:1px solid var(--line);text-align:center}
+th{color:var(--mute);font-size:.8rem;letter-spacing:.2em;text-transform:uppercase}
+td.b{color:var(--blue2)}td.r{color:var(--red2)}
+.big{font-family:var(--f-d);font-weight:900;font-size:clamp(2.6rem,8vw,5.2rem);line-height:.9;text-transform:uppercase}
+.belt{height:46px;margin:.2rem auto;width:min(360px,100%);background:linear-gradient(90deg,#3a2a00,#ffc548 20%,#fff0b0 50%,#ffc548 80%,#3a2a00);border:2px solid #7a5a00;display:flex;align-items:center;justify-content:center;font-family:var(--f-d);font-weight:900;letter-spacing:.2em;color:#2a1c00;font-size:1.2rem}
+.overflow{overflow-x:auto}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:var(--f-d);font-weight:900;letter-spacing:.3em;font-size:1.4rem;z-index:50;transition:opacity .5s;text-align:center;padding:2rem}
+#boot.off{opacity:0;pointer-events:none}
+#rot{display:none}
+@media (max-width:700px){.hb{width:40%}.nm{font-size:1.1rem}.corner{display:none}.bar{height:12px}#hints{display:none}.cards{grid-template-columns:1fr 1fr}.cards .card:nth-child(2){grid-column:auto}.card .mini,.card .lbl{display:none}.card h3{font-size:1.8rem}.card{padding:.6rem}#sc-select{justify-content:space-between!important}.stat{grid-template-columns:4.2rem 1fr 1.8rem}.scrim{background:linear-gradient(180deg,rgba(4,5,10,.92),rgba(4,5,10,.7) 70%,rgba(4,5,10,.2))}.screen{justify-content:flex-start}#train{top:auto;bottom:210px;width:170px}.mid{min-width:96px}#timer{font-size:1.7rem}.combo{font-size:1.3rem}.bot{width:38%}}
+@media (max-height:520px){.logo .ky,.logo .chea{font-size:3.2rem}.tag{margin-bottom:.5rem}.btn{font-size:1.15rem;padding:.4rem .9rem}.stack{gap:.35rem}.screen{justify-content:flex-start}}
+@media (prefers-reduced-motion:reduce){#banner.show{animation-duration:.01s}}
+</style>
+
+<canvas id="gl"></canvas>
+<div id="boot">LOADING ARENA</div>
+<div id="bars"></div>
+<div id="flash"></div>
+
+<div id="hud" class="ui">
+  <div class="hb" id="h1"><div class="nm"><span class="corner b">BLUE CORNER</span><span id="n1">KY</span></div>
+    <div class="bar"><i class="g" id="g1"></i><i class="f" id="f1"></i></div><div class="bar s"><i class="st" id="s1"></i></div></div>
+  <div class="mid"><div id="timer">2:00</div><div id="roundlbl">ROUND 1 / 3</div><div id="status">GET READY</div></div>
+  <div class="hb" id="h2"><div class="nm"><span class="corner r">RED CORNER</span><span id="n2">CHEA</span></div>
+    <div class="bar"><i class="g" id="g2"></i><i class="f" id="f2"></i></div><div class="bar s"><i class="st" id="s2"></i></div></div>
+  <button class="hbtn" id="btnPause" aria-label="Pause">II</button><button class="hbtn" id="btnMute" aria-label="Sound">SFX</button>
+  <div id="train" class="panel"><h4>Training drills</h4><ul id="drills"></ul><div class="lbl" style="margin-top:.5rem">Partner</div><div class="seg" id="dummySeg"></div></div>
+  <div class="bot" id="b1"><div class="combo" id="c1"><span>0</span><small>COMBO</small></div><div class="sp" id="sp1"><i></i></div><div class="sptxt" id="spt1">Special charging</div></div>
+  <div class="bot" id="b2"><div class="combo" id="c2"><span>0</span><small>COMBO</small></div><div class="sp" id="sp2"><i></i></div><div class="sptxt" id="spt2">Special charging</div></div>
+  <div id="hints"></div>
+  <div id="banner"></div><div id="count"></div><div id="floats"></div>
+</div>
+
+<div id="touch" class="ui">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="tbP">
+    <button class="tb p" data-act="jab" style="right:150px;bottom:6px">JAB</button>
+    <button class="tb p" data-act="cross" style="right:76px;bottom:6px">CROSS</button>
+    <button class="tb p" data-act="upper" style="right:2px;bottom:6px">UPPER</button>
+    <button class="tb p" data-act="lhook" style="right:150px;bottom:82px">L HOOK</button>
+    <button class="tb p" data-act="rhook" style="right:76px;bottom:82px">R HOOK</button>
+    <button class="tb p" data-act="body" style="right:2px;bottom:82px">BODY</button>
+    <button class="tb sp2" data-act="special" style="right:46px;bottom:166px">SPECIAL</button>
+  </div>
+  <button class="tb k" data-hold="block" style="left:164px;bottom:max(30px,env(safe-area-inset-bottom,0px))">BLOCK</button>
+  <button class="tb d" data-act="dodgeL" style="left:164px;bottom:calc(max(30px,env(safe-area-inset-bottom,0px)) + 90px)">DODGE L</button>
+  <button class="tb d" data-act="dodgeR" style="left:232px;bottom:calc(max(30px,env(safe-area-inset-bottom,0px)) + 90px)">DODGE R</button>
+</div>
+
+<section class="screen scrim on" id="sc-menu">
+  <div class="stack">
+    <h1 class="logo"><span class="ky">KY</span><span class="vs">versus</span><span class="chea">CHEA</span></h1>
+    <p class="tag">Boxing Championship</p>
+    <button class="btn hot" data-act="mode"><span>Start Fight<small>Vs AI, versus a friend, or the title run</small></span></button>
+    <button class="btn blue" data-act="select"><span>Character Select<small>Pick your fighter</small></span></button>
+    <button class="btn" data-act="train"><span>Training Mode<small>Drills on a sparring partner</small></span></button>
+    <button class="btn" data-act="settings"><span>Settings</span></button>
+    <button class="btn" data-act="how"><span>How to Play</span></button>
+  </div>
+</section>
+
+<section class="screen scrim" id="sc-mode">
+  <div class="stack">
+    <h2>Choose your fight</h2>
+    <button class="btn hot" data-act="pvai"><span>Player vs AI<small id="pvaiSub">3 rounds, normal</small></span></button>
+    <button class="btn blue" data-act="pvp"><span>Player vs Player<small>Two players, one keyboard</small></span></button>
+    <button class="btn red" data-act="champ"><span>Championship<small>Beat three opponents, win the belt</small></span></button>
+    <button class="btn sm" data-act="back" style="margin-top:.6rem"><span>Back</span></button>
+  </div>
+</section>
+
+<section class="screen" id="sc-select" style="justify-content:space-between">
+  <h2 style="text-align:center;text-shadow:0 2px 20px #000;margin-top:.5rem">Pick your fighter</h2>
+  <div class="cards" id="selCards"></div>
+  <div class="row" style="justify-content:center"><button class="btn hot sm" data-act="back"><span>Confirm</span></button></div>
+</section>
+
+<section class="screen scrim-full" id="sc-settings">
+  <div class="modal"><h2>Settings</h2><div id="setList"></div><div class="row"><button class="btn hot sm" data-act="back"><span>Done</span></button></div></div>
+</section>
+
+<section class="screen scrim-full" id="sc-how">
+  <h2 style="text-align:center">How to play</h2>
+  <div class="how">
+    <div class="panel"><div class="lbl">Player 1 keyboard</div>
+      <div class="krow"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>Move and circle</span></div>
+      <div class="krow"><span><kbd>J</kbd> <kbd>K</kbd></span><span>Left jab, right cross</span></div>
+      <div class="krow"><span><kbd>U</kbd> <kbd>I</kbd></span><span>Left hook, right hook</span></div>
+      <div class="krow"><span><kbd>O</kbd> <kbd>L</kbd></span><span>Uppercut, body punch</span></div>
+      <div class="krow"><span><kbd>Space</kbd></span><span>Hold to block</span></div>
+      <div class="krow"><span><kbd>Q</kbd> <kbd>E</kbd></span><span>Dodge left, dodge right</span></div>
+      <div class="krow"><span><kbd>Shift</kbd></span><span>Special (meter full)</span></div>
+      <div class="krow"><span><kbd>P</kbd> <kbd>Esc</kbd></span><span>Pause</span></div></div>
+    <div class="panel"><div class="lbl">Player 2 (local versus)</div>
+      <div class="krow"><span><kbd>Arrows</kbd></span><span>Move and circle</span></div>
+      <div class="krow"><span><kbd>Num4</kbd> <kbd>Num5</kbd></span><span>Jab, cross (or 1, 2)</span></div>
+      <div class="krow"><span><kbd>Num7</kbd> <kbd>Num8</kbd></span><span>Left, right hook (or 3, 4)</span></div>
+      <div class="krow"><span><kbd>Num9</kbd> <kbd>Num6</kbd></span><span>Uppercut, body (or 5, 6)</span></div>
+      <div class="krow"><span><kbd>Num0</kbd> / <kbd>/</kbd></span><span>Hold to block</span></div>
+      <div class="krow"><span><kbd>Num1</kbd> <kbd>Num3</kbd></span><span>Dodge (or , and .)</span></div>
+      <div class="krow"><span><kbd>NumEnter</kbd> / <kbd>R-Shift</kbd></span><span>Special</span></div></div>
+    <div class="panel"><div class="lbl">Touch</div>
+      <p>Left stick moves. Right buttons throw jab, cross, hooks, uppercut and body shots. Hold BLOCK, tap DODGE to slip sideways, tap SPECIAL when the purple meter turns gold.</p>
+      <div class="lbl" style="margin-top:.8rem">The fight</div>
+      <p>Three 2-minute rounds by default. Win by knockout, by three knockdowns in a round (TKO), or on the judges' cards. When you are down, mash any punch button to get up faster.</p>
+      <p><b>KY</b> hits like a truck but is slow and tires fast. <b>CHEA</b> is quick, never tires, and wins by volume. Dodge a punch and your next shot lands as a counter for extra damage.</p></div>
+  </div>
+  <div class="row" style="justify-content:center;margin-top:1rem"><button class="btn hot sm" data-act="back"><span>Back</span></button></div>
+</section>
+
+<section class="screen scrim-full" id="sc-break">
+  <div class="modal"><div class="lbl" id="brkLbl">Round complete</div><div class="big" id="brkTime">1:00</div>
+    <div class="overflow"><table id="brkTable"></table></div>
+    <p class="mini">Both corners recover health and stamina during the break.</p>
+    <div class="row"><button class="btn hot sm" data-act="nextround"><span>Ready, ring the bell</span></button></div></div>
+</section>
+
+<section class="screen scrim-full" id="sc-result">
+  <div class="modal"><div class="lbl" id="resLbl">Winner</div><div class="big" id="resTitle">KY</div><div id="resSub" class="lbl"></div><div id="resBelt"></div>
+    <div class="overflow"><table id="resTable"></table></div>
+    <div class="row" id="resBtns"></div></div>
+</section>
+
+<section class="screen scrim-full" id="sc-pause">
+  <div class="modal" style="width:min(420px,100%)"><h2>Paused</h2>
+    <button class="btn hot" data-act="resume"><span>Resume</span></button>
+    <button class="btn" data-act="restart"><span>Restart fight</span></button>
+    <button class="btn" data-act="quit"><span>Quit to menu</span></button></div>
+</section>
+
+<section class="screen" id="sc-intro" style="justify-content:flex-end;padding-bottom:12vh">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;pointer-events:none">
+    <div><div class="lbl" style="color:var(--blue2)" id="inA1">Blue corner</div><div class="big" style="color:var(--blue2)" id="inA">KY</div><div class="lbl" id="inA2"></div></div>
+    <div class="big" style="color:var(--gold);font-size:2.4rem">VS</div>
+    <div style="text-align:right"><div class="lbl" style="color:var(--red2)" id="inB1">Red corner</div><div class="big" style="color:var(--red2)" id="inB">CHEA</div><div class="lbl" id="inB2"></div></div>
+  </div>
+</section>
